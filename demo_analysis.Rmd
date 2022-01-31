@@ -1,0 +1,297 @@
+---
+title: "Peak Bloom Prediction Demo"
+author: "Eager Learner"
+date: "01/01/2022"
+output:
+  html_document:
+    df_print: kable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, 
+                      message = FALSE,
+                      fig.align = 'center',
+                      out.width = '80%')
+```
+
+## Instructions
+
+In this analysis we demonstrate a very simple way of predicting the peak bloom date in the coming decade for all four locations required by the competition.
+The models used here are very simple and are using only the historic data for these four locations, but no other information or covariates.
+At the end of this document ((#appendix-rnoaa)[Appendix A]), we also demonstrate a simple way to get historic temperature data for the four locations via the `rnoaa` package.
+
+For this demo analysis we are using methods from the _tidyverse_ of R packages.
+They can be installed via
+
+```{r, eval=FALSE}
+install.packages('tidyverse')
+```
+
+and then loaded via
+
+```{r}
+library(tidyverse)
+```
+
+
+## Loading the data
+
+The data for each of the three main sites is provided as simple text file in CSV format.
+Each file contains the dates of the peak bloom of the cherry trees at the respective site, alongside the geographical location of the site.
+
+The six columns in each data file are
+
+* _location_ a human-readable location identifier (`string`).
+* _lat_ (approximate) latitude of the cherry trees (`double`).
+* _long_ (approximate) longitude of the cherry trees (`double`).
+* _alt_ (approximate) altitude of the cherry trees (`double`).
+* _year_ year of the observation (`integer`).
+* *bloom_date* date of peak bloom of the cherry trees (ISO 8601 date `string`). The "peak bloom date" may be defined differently for different sites
+* *bloom_doy* days since January 1st of the year until peak bloom (`integer`). January 1st corresponds to `1`.
+
+In R, the data files can be read with `read.csv()` and concatenated with the `bind_rows()` function:
+
+```{r}
+cherry <- read.csv("data/washingtondc.csv") %>% 
+  bind_rows(read.csv("data/liestal.csv")) %>% 
+  bind_rows(read.csv("data/kyoto.csv"))
+```
+
+For example, the latest 3 observations for each location can be extracted with:
+
+```{r}
+cherry %>% 
+  group_by(location) %>% 
+  slice_tail(n = 3)
+```
+
+## Visualizing the time series
+
+
+```{r, fig.width=8, fig.height=3, out.width='100%', fig.cap="Time series of peak bloom of cherry trees since 1880 at three different sites."}
+cherry %>% 
+  filter(year >= 1880) %>%
+  ggplot(aes(x = year, y = bloom_doy)) +
+  geom_point() +
+  geom_step(linetype = 'dotted', color = 'gray50') +
+  scale_x_continuous(breaks = seq(1880, 2020, by = 20)) +
+  facet_grid(cols = vars(str_to_title(location))) +
+  labs(x = "Year", y = "Peak bloom (days since Jan 1st)")
+```
+
+## Predicting the peak bloom
+
+A very simple method to predict peak bloom date in the future is to fit a least-squares line through the observed dates and extrapolate the regression function.
+We want to have a separate line for each location, hence we tell R to estimate _interaction_ effects.
+We only use data from 1880 to fit the trends, as prior data may not be as reliable/relevant.
+
+```{r}
+# Fit simple least-squares lines for all sites.
+ls_fit <- lm(bloom_doy ~ location * year, data = cherry, subset = year >= 1880)
+```
+
+This simple linear regression functions suggest a trend toward earlier peak bloom at all 3 sites.
+We can compute the actual predictions using the `predict()` function and 
+
+```{r}
+# Compute the predictions for all 3 sites
+predictions <- expand_grid(location = unique(cherry$location),
+                           year = 1880:2031) %>% 
+  bind_cols(predicted_doy = predict(ls_fit, newdata = .))
+
+# Plot the predictions alongside the actual observations for 1990 up to 2032.
+cherry %>% 
+  right_join(predictions, by = c('year', 'location')) %>%
+  filter(year >= 1880) %>% 
+  ggplot(aes(x = year, y = predicted_doy)) +
+  geom_line(aes(color = year > 2021), size = 1) +
+  geom_point(aes(y = bloom_doy)) +
+  scale_color_manual(values = c('FALSE' = 'gray50', 'TRUE' = 'blue'),
+                     guide = 'none') +
+  facet_grid(cols = vars(str_to_title(location))) +
+  labs(x = "Year", y = "Peak bloom (days since Jan 1st)")
+```
+
+Based on this very simple model, the peak bloom dates at the three sites are very similar across the 10 years:
+
+```{r}
+#' Small helper function to convert the day of year to
+#' the actual date.
+#' 
+#' @param year year as an integer
+#' @param doy day of the year as integer (1 means January 1st)
+#' @return date string
+doy_to_date <- function (year, doy) {
+  strptime(paste(year, doy, sep = '-'), '%Y-%j') %>% # create date object
+    strftime('%Y-%m-%d') # translate back to date string in ISO 8601 format
+}
+
+predictions %>% 
+  filter(year > 2021) %>% 
+  mutate(predicted_doy = round(predicted_doy),
+         predicted_date = doy_to_date(year, predicted_doy))
+```
+
+## Extrapolating to Vancouver, BC
+
+For the cherry trees in Vancouver, BC, no historical data is available.
+The trees are located approximately at 49.2236916°N (latitude), -123.1636251°E (longitude), 24 meters above sea levels (altitude).
+We need to *extrapolate* from what we have learned about the peak bloom dates in the other locations to Vancouver.
+The simple model we have fitted above, however, does not allow us to transfer any knowledge from the other sites to Vancouver -- we have only used the history trend at the respective sites.
+
+Although the climate in Vancouver is different from the other locations, the simplest way to borrow information from the other locations is to average across these three sites.
+Hence, we want to fit a straight line through the peak bloom dates, ignoring the actual site:
+
+```{r}
+# Fit simple least-squares lines for all sites.
+ls_fit_for_van <- lm(bloom_doy ~ year, data = cherry, subset = year >= 1880)
+
+predictions_vancouver <- tibble(location = 'vancouver',
+       year = 2022:2031) %>% 
+  bind_cols(predicted_doy = round(predict(ls_fit_for_van, newdata = .)))
+```
+
+Not surprisingly, the predicted peak bloom dates for Vancouver are thus very similar to the other 3 sites:
+```{r}
+predictions_vancouver
+```
+
+We can now append these predictions to the predictions for the other sites:
+
+```{r}
+predictions <- bind_rows(predictions, predictions_vancouver)
+```
+
+## Preparing the submission file
+
+Once we have the predictions for all four sites, we have to save them in the correct format for the competition.
+
+```{r}
+submission_predictions <- predictions %>% 
+  filter(year > 2021) %>% 
+  mutate(predicted_doy = round(predicted_doy)) %>% 
+  pivot_wider(names_from = 'location', values_from = 'predicted_doy') %>% 
+  select(year, kyoto, liestal, washingtondc, vancouver)
+
+submission_predictions
+```
+
+For submission, these predictions must be saved as a CSV file.
+**Important:** the CSV file must not have row names, which R adds by default. Specify `row.names=FALSE` to suppress them:
+
+```{r, eval=FALSE}
+write.csv(submission_predictions, file = "cherry-predictions.csv",
+          row.names = FALSE)
+```
+
+## Appendix: Adding Covariates {#appendix-rnoaa}
+
+We encourage you to find additional publicly-available data that will improve your predictions. For example, one source of global meteorological data comes from the Global Historical Climatology Network (GHCN), available in the `rnoaa` package. The package can also be installed via 
+
+```{r, eval = FALSE}
+install.packages("rnoaa")
+```
+
+and the loaded via
+
+```{r}
+library(rnoaa)
+```
+
+The list of stations can be retrieved using the `ghcnd_stations()` function. Note that the closest weather station to each city with continuously collected maximum temperatures are USC00186350 (Washington D.C.), GME00127786 (Liestal), JA000047759 (Kyoto), and CA001108395 (Vancouver).
+
+```{r, eval = FALSE}
+stations <- ghcnd_stations()
+```
+
+As a simple demonstration, we retrieve the average seasonal maximum daily temperature (in 1/10 °C) from these stations using our own `get_temperature()` function, which wraps the `ghcnd_search()` function in the `rnoaa` package. (N.b. `ghcnd_search()` returns a list. Each element of the list corresponds to an element of the `var` argument.)
+
+```{r}
+#' Get the annual average maximum temperature at the given station,
+#' separated into the 4 meteorological seasons (Winter, Spring, Summer, Fall).
+#' 
+#' The seasons are span 3 months each.
+#' Winter is from December to February, Spring from March to May,
+#' Summer from June to August, and Fall from September to November.
+#' Note that December is counted towards the Winter of the next year, i.e.,
+#' temperatures in December 2020 are accounted for in Winter 2021.
+#' 
+#' @param stationid the `rnoaa` station id (see [ghcnd_stations()])
+#' @return a data frame with columns
+#'   - `year` ... the year of the observations
+#'   - `season` ... the season (Winter, Spring, Summer, Fall)
+#'   - `tmax_avg` ... average maximum temperate in tenth degree Celsius
+get_temperature <- function (stationid) {
+  ghcnd_search(stationid = stationid, var = c("tmax"), 
+               date_min = "1950-01-01", date_max = "2022-01-31")[[1]] %>%
+  mutate(year = as.integer(format(date, "%Y")),
+         month = as.integer(strftime(date, '%m')) %% 12, # make December "0"
+         season = cut(month, breaks = c(0, 2, 5, 8, 11),
+                      include.lowest = TRUE,
+                      labels = c("Winter", "Spring", "Summer", "Fall")),
+         year = if_else(month == 0, year + 1L, year)) %>%
+  group_by(year, season) %>%
+  summarize(tmax_avg = mean(tmax, na.rm = TRUE))
+}
+
+historic_temperatures <-
+  tibble(location = "washingtondc", get_temperature("USC00186350")) %>%
+  bind_rows(tibble(location = "liestal", get_temperature("GME00127786"))) %>%
+  bind_rows(tibble(location = "kyoto", get_temperature("JA000047759"))) %>%
+  bind_rows(tibble(location = "vancouver", get_temperature("CA001108395")))
+
+historic_temperatures %>%
+  ggplot() + 
+  aes(year, tmax_avg) + 
+  geom_line() +
+  xlim(1950, 2031) +
+  labs(x = "Year", y = "Average maximum temperature (1/10 °C)") +
+  facet_grid(factor(season) ~ str_to_title(location))
+```
+
+We then predict the peak bloom date in two steps. Step 1 extrapolates average winter and spring temperature until 2031 using simple linear regression. Step 2 predicts the peak bloom date given the extrapolated temperatures, again using simple linear regression. 
+
+```{r}
+# Step 1. extrapolate average seasonal maximum temperature
+ls_fit_temperature <- lm(tmax_avg ~ year * season + location, 
+                         data = historic_temperatures)
+
+temperature_predictions <-
+  expand_grid(location = c("washingtondc", "liestal", "kyoto", "vancouver" ),
+              season = c("Winter", "Spring", "Summer", "Fall"),
+              year = 1950:2032) %>%
+  bind_cols(predicted_temperature = 
+              predict(ls_fit_temperature, newdata = .)) %>%
+  filter(season %in% c("Winter", "Spring")) %>%
+  pivot_wider(names_from = season, values_from = predicted_temperature)
+
+# Step 2. predict bloom day from extrapolated temperatures
+predictions_temperature <-
+  temperature_predictions %>%
+  left_join(cherry,
+            by = c("location", "year")) %>%
+  lm(bloom_doy ~ Spring * Winter, data = .) %>%
+  predict(newdata = temperature_predictions) %>%
+  round() %>%
+  bind_cols(predicted_doy_temperature = ., temperature_predictions)
+```
+
+The following plot shows a comparison of predictions for Vancouver using the two methods described in this demo.
+
+```{r}
+predictions_vancouver %>%
+  left_join(predictions_temperature,
+            by = c("location", "year")) %>%
+  pivot_longer(cols = c("predicted_doy", "predicted_doy_temperature")) %>%
+  mutate(name = ifelse(name == "predicted_doy", 
+                       "Method 1: location-based model", 
+                       "Method 2: temperature-based model")) %>%
+  ggplot() +
+  aes(x = year, y = value, linetype = name) +
+  geom_line() +
+  labs(x = "Year", linetype = "",
+       y = "Predicted peak bloom (days since Jan 1st) for Vancouver") +
+  theme(legend.position = "bottom")
+```
+
+
