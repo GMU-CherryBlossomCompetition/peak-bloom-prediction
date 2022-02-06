@@ -108,7 +108,7 @@ The true bloom dates for 2022 are taken to be the dates reported by the followin
 - **Kyoto (Japan):** a local news paper from Arashiyama as published at http://atmenv.envi.osakafu-u.ac.jp/aono/kyophenotemp4,
 - **Washington, D.C. (USA):** National Park Service,
 - **Liestal-Weideli (Switzerland):** MeteoSwiss,
-- **Vancouver, BC (Canada):**  University of British Columbia.
+- **Vancouver, BC (Canada):** Vancouver Cherry Blossom Festival in collaboration with Douglas Justice, Associate Director, Curator of Collections, UBC Botanical Garden.
 
 The full competition rules are available under https://competition.statistics.gmu.edu.
 
