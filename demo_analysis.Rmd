@@ -136,6 +136,9 @@ predictions %>%
 
 For the cherry trees in Vancouver, BC, no historical data is available.
 The trees are located approximately at 49.2236916°N (latitude), -123.1636251°E (longitude), 24 meters above sea levels (altitude).
+Casual observations have been recorded in the way of photos posted to the [VCBF Neighbourhood Blog for Kerrisdale](https://forums.botanicalgarden.ubc.ca/threads/kerrisdale.36008/).
+You can search the forum for the keywords "Akebono" (i.e., the name of the cultivar) and "Maple Grove Park" (i.e., the location of the trees).
+
 We need to *extrapolate* from what we have learned about the peak bloom dates in the other locations to Vancouver.
 The simple model we have fitted above, however, does not allow us to transfer any knowledge from the other sites to Vancouver -- we have only used the history trend at the respective sites.
 
