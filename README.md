@@ -91,19 +91,19 @@ To enter the competition, you must make your repository publicly accessible!
 
 To enter the competition you must submit your predictions and the URL pointing to your repository via https://competition.statistics.gmu.edu.
 
-**Entries must be submitted by the end of February 28, 2022 (anywhere on earth)**.
+**Entries must be submitted by the end of February 28, 2023 (anywhere on earth)**.
 If it's February anywhere on earth, your submission will be considered.
 
 The predictions are judged based on the sum of the absolute differences between your predicted peak bloom dates and the publicly posted peak bloom dates:
 
 ```
-| predicted_bloom_date_kyoto_2022 - actual_bloom_date_kyoto_2022 | +
-  | predicted_bloom_date_washingtondc_2022 - actual_bloom_date_washingtondc_2022 | +
-  | predicted_bloom_date_liestal_2022 - actual_bloom_date_liestal_2022 | +
-  | predicted_bloom_date_vancouver_2022 - actual_bloom_date_vancouver_2022 |
+| predicted_bloom_date_kyoto_2023 - actual_bloom_date_kyoto_2023 | +
+  | predicted_bloom_date_washingtondc_2023 - actual_bloom_date_washingtondc_2023 | +
+  | predicted_bloom_date_liestal_2023 - actual_bloom_date_liestal_2023 | +
+  | predicted_bloom_date_vancouver_2023 - actual_bloom_date_vancouver_2023 |
 ```
 
-The true bloom dates for 2022 are taken to be the dates reported by the following agencies/institutions:
+The true bloom dates for 2023 are taken to be the dates reported by the following agencies/institutions:
 
 - **Kyoto (Japan):** a local news paper from Arashiyama as published at http://atmenv.envi.osakafu-u.ac.jp/aono/kyophenotemp4,
 - **Washington, D.C. (USA):** National Park Service,
