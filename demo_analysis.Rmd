@@ -164,11 +164,11 @@ We can check the predictions against the data from previous competition years.
 tibble(location = 'vancouver',
        year = 2022) %>% 
   bind_cols(predicted_doy = round(predict(ls_fit_for_van, newdata = .))) %>%
-  left_join(read_csv("data/vancouver.csv")) %>%
+  left_join(read.csv("data/vancouver.csv")) %>%
   select(location, year, bloom_doy, predicted_doy)
 ```
 
-If satisfied with the predictions, we can now them to the predictions for the other sites:
+If satisfied with the predictions, we can append them to the predictions for the other sites:
 ```{r}
 predictions <- bind_rows(predictions, predictions_vancouver)
 ```
