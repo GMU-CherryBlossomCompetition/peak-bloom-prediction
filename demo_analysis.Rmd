@@ -36,7 +36,7 @@ library(tidyverse)
 
 ## Loading the data
 
-The data for each of the three main sites is provided as simple text file in CSV format.
+The data for each of the three main sites is provided as a simple text file in CSV format.
 Each file contains the dates of the peak bloom of the cherry trees at the respective site, alongside the geographical location of the site.
 
 The six columns in each data file are
