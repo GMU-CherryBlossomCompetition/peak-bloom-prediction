@@ -96,7 +96,7 @@ We can compute the actual predictions using the `predict()` function and
 ```{r}
 # Compute the predictions for all 3 sites
 predictions <- expand_grid(location = unique(cherry$location),
-                           year = 1880:2031) %>% 
+                           year = 1880:2032) %>% 
   bind_cols(predicted_doy = predict(ls_fit, newdata = .))
 
 # Plot the predictions alongside the actual observations for 1990 up to 2032.
