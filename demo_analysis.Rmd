@@ -104,7 +104,7 @@ cherry %>%
   right_join(predictions, by = c('year', 'location')) %>%
   filter(year >= 1880) %>% 
   ggplot(aes(x = year, y = predicted_doy)) +
-  geom_line(aes(color = year > 2021), size = 1) +
+  geom_line(aes(color = year > 2022), size = 1) +
   geom_point(aes(y = bloom_doy)) +
   scale_color_manual(values = c('FALSE' = 'gray50', 'TRUE' = 'blue'),
                      guide = 'none') +
@@ -150,7 +150,7 @@ Hence, we want to fit a straight line through the peak bloom dates, ignoring the
 ls_fit_for_van <- lm(bloom_doy ~ year, data = cherry, subset = year >= 1880)
 
 predictions_vancouver <- tibble(location = 'vancouver',
-       year = 2022:2031) %>% 
+       year = 2023:2032) %>% 
   bind_cols(predicted_doy = round(predict(ls_fit_for_van, newdata = .)))
 ```
 
@@ -171,7 +171,7 @@ Once we have the predictions for all four sites, we have to save them in the cor
 
 ```{r}
 submission_predictions <- predictions %>% 
-  filter(year > 2021) %>% 
+  filter(year > 2022) %>% 
   mutate(predicted_doy = round(predicted_doy)) %>% 
   pivot_wider(names_from = 'location', values_from = 'predicted_doy') %>% 
   select(year, kyoto, liestal, washingtondc, vancouver)
@@ -226,7 +226,7 @@ As a simple demonstration, we retrieve the average seasonal maximum daily temper
 #'   - `tmax_avg` ... average maximum temperate in tenth degree Celsius
 get_temperature <- function (stationid) {
   ghcnd_search(stationid = stationid, var = c("tmax"), 
-               date_min = "1950-01-01", date_max = "2022-01-31")[[1]] %>%
+               date_min = "1950-01-01", date_max = "2023-01-31")[[1]] %>%
   mutate(year = as.integer(format(date, "%Y")),
          month = as.integer(strftime(date, '%m')) %% 12, # make December "0"
          season = cut(month, breaks = c(0, 2, 5, 8, 11),
@@ -247,12 +247,12 @@ historic_temperatures %>%
   ggplot() + 
   aes(year, tmax_avg) + 
   geom_line() +
-  xlim(1950, 2031) +
+  xlim(1950, 2032) +
   labs(x = "Year", y = "Average maximum temperature (1/10 °C)") +
   facet_grid(factor(season) ~ str_to_title(location))
 ```
 
-We then predict the peak bloom date in two steps. Step 1 extrapolates average winter and spring temperature until 2031 using simple linear regression. Step 2 predicts the peak bloom date given the extrapolated temperatures, again using simple linear regression. 
+We then predict the peak bloom date in two steps. Step 1 extrapolates average winter and spring temperature until 2032 using simple linear regression. Step 2 predicts the peak bloom date given the extrapolated temperatures, again using simple linear regression. 
 
 ```{r}
 # Step 1. extrapolate average seasonal maximum temperature
