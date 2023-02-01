@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE,
 ## Instructions
 
 In this analysis we demonstrate a very simple way of predicting the peak bloom date in the coming decade for all four locations required by the competition.
-The models used here are very simple and only use the historic data for these four locations---no other covariates or information are considered.
+The models used here are very simple and only use the past bloom dates observed at each locations---no other covariates or information are considered.
 At the end of this document ([Appendix A](#appendix-rnoaa)), we demonstrate a simple way to get historic temperature data for the four locations via the `rnoaa` package.
 
 For this demo analysis we are using methods from the _tidyverse_ of R packages.
