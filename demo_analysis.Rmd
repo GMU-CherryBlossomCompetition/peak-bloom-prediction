@@ -127,7 +127,7 @@ doy_to_date <- function (year, doy) {
 }
 
 predictions %>% 
-  filter(year > 2021) %>% 
+  filter(year > 2022) %>% 
   mutate(predicted_doy = round(predicted_doy),
          predicted_date = doy_to_date(year, predicted_doy))
 ```
