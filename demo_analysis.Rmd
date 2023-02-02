@@ -81,7 +81,7 @@ cherry %>%
 
 ## Predicting the peak bloom
 
-A very simple method to predict peak bloom date in the future is to fit a least-squares line through the observed dates and extrapolate the regression function.
+A simple method to predict peak bloom date in the future is to fit a least-squares line through the observed dates and extrapolate the regression function.
 We want to have a separate line for each location, hence we tell R to estimate _interaction_ effects.
 We only use data from 1880 to fit the trends, as prior data may not be as reliable/relevant.
 
