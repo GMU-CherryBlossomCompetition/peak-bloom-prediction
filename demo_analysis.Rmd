@@ -300,6 +300,7 @@ predictions_vancouver %>%
   ggplot() +
   aes(x = year, y = value, linetype = name) +
   geom_line() +
+  scale_x_continuous(breaks = seq(2023, 2032, by = 3)) +
   labs(x = "Year", linetype = "",
        y = "Predicted peak bloom (days since Jan 1st) for Vancouver") +
   theme(legend.position = "bottom")
