@@ -105,9 +105,7 @@ The predictions are judged based on the sum of the absolute differences between 
 
 The prediction intervals are evaluated based on their squared length and if they cover the actual peak bloom dates:
 
-```
-
-```
+![Formula for determining the winner for the most accurate prediction intervals.](figures/readme/prediction_interval.png)
 
 The true bloom dates for 2024 are taken to be the dates reported by the following agencies/institutions:
 
