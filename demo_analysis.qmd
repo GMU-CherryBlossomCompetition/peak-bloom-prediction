@@ -1,13 +1,16 @@
 ---
 title: "Peak Bloom Prediction Demo"
 author: "Eager Learner"
-date: "01/01/2023"
-output:
-  html_document:
-    df_print: kable
+date: "01/05/2024"
+lang: en-US
+format:
+  html:
+    embed-resources: true
 ---
 
-```{r setup, include=FALSE}
+```{r}
+#| label: setup
+#| include: false
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, 
                       message = FALSE,
                       fig.align = 'center',
@@ -23,7 +26,8 @@ At the end of this document ([Appendix A](#appendix-rnoaa)), we demonstrate a si
 For this demo analysis we are using methods from the _tidyverse_ of R packages.
 They can be installed via
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 install.packages('tidyverse')
 ```
 
@@ -54,7 +58,8 @@ In R, the data files can be read with `read.csv()` and concatenated with the `bi
 ```{r}
 cherry <- read.csv("data/washingtondc.csv") %>% 
   bind_rows(read.csv("data/liestal.csv")) %>% 
-  bind_rows(read.csv("data/kyoto.csv"))
+  bind_rows(read.csv("data/kyoto.csv")) %>% 
+  bind_rows(read.csv("data/vancouver.csv"))
 ```
 
 For example, the latest 3 observations for each location can be extracted with:
@@ -68,7 +73,12 @@ cherry %>%
 ## Visualizing the time series
 
 
-```{r, fig.width=8, fig.height=3, out.width='100%', fig.cap="Time series of peak bloom of cherry trees since 1880 at three different sites."}
+```{r}
+#| fig-width: 8
+#| fig-height: 3
+#| out-width: 100%
+#| fig-cap: |
+#|   Time series of peak bloom of cherry trees since 1880 at the four different sites.
 cherry %>% 
   filter(year >= 1880) %>%
   ggplot(aes(x = year, y = bloom_doy)) +
@@ -94,25 +104,32 @@ This simple linear regression functions suggest a trend toward earlier peak bloo
 We can compute the actual predictions using the `predict()` function and 
 
 ```{r}
+#| fig-width: 8
+#| fig-height: 3
+#| out-width: 100%
+#| fig-cap: |
+#|   Predictions and 90% prediction intervals from simple linear regression models fitted to all
+#|   four sites.
 # Compute the predictions for all 3 sites
 predictions <- expand_grid(location = unique(cherry$location),
-                           year = 1880:2032) %>% 
-  bind_cols(predicted_doy = predict(ls_fit, newdata = .))
+                           year = 1880:2024) %>% 
+  bind_cols(predict(ls_fit, newdata = ., interval = 'prediction', level = 0.9)) %>% 
+  rename(prediction = fit, lower = lwr, upper = upr)
 
-# Plot the predictions alongside the actual observations for 1990 up to 2032.
+# Plot the predictions alongside the actual observations for 2015 up to 2023.
 cherry %>% 
   right_join(predictions, by = c('year', 'location')) %>%
-  filter(year >= 1880) %>% 
-  ggplot(aes(x = year, y = predicted_doy)) +
-  geom_line(aes(color = year > 2022), size = 1) +
+  filter((location == 'vancouver' & year >= 2021) | (location != 'vancouver' & year >= 2015)) %>% 
+  ggplot(aes(x = year, y = prediction, ymin = lower, ymax = upper)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(color = 'black', linetype = '22', linewidth = 0.8, fill = NA) +
   geom_point(aes(y = bloom_doy)) +
-  scale_color_manual(values = c('FALSE' = 'gray50', 'TRUE' = 'blue'),
-                     guide = 'none') +
+  scale_x_continuous(breaks = c(2015, 2018, 2021, 2024)) +
   facet_grid(cols = vars(str_to_title(location))) +
   labs(x = "Year", y = "Peak bloom (days since Jan 1st)")
 ```
 
-Based on this very simple model, the peak bloom dates at the three sites are very similar across the 10 years:
+Based on this very simple model, the peak bloom dates at the four sites are:
 
 ```{r}
 #' Small helper function to convert the day of year to
@@ -127,14 +144,17 @@ doy_to_date <- function (year, doy) {
 }
 
 predictions %>% 
-  filter(year > 2022) %>% 
-  mutate(predicted_doy = round(predicted_doy),
-         predicted_date = doy_to_date(year, predicted_doy))
+  filter(year == 2024) %>% 
+  mutate(prediction = round(prediction),
+         lower = floor(lower),
+         upper = ceiling(upper),
+         prediction_date = doy_to_date(year, prediction))
 ```
 
 ## Extrapolating to Vancouver, BC
 
 For the cherry trees in Vancouver, BC, few historical observations are available.
+This shows in the simple analysis above in the very wide prediction interval.
 The trees are located approximately at 49.2236916°N (latitude), -123.1636251°E (longitude), 24 meters above sea levels (altitude).
 Casual observations have been recorded in the way of photos posted to the [VCBF Neighbourhood Blog for Kerrisdale](https://forums.botanicalgarden.ubc.ca/threads/kerrisdale.36008/).
 You can search the forum for the keywords "Akebono" (i.e., the name of the cultivar) and "Maple Grove Park" (i.e., the location of the trees).
@@ -147,30 +167,46 @@ Hence, we want to fit a straight line through the peak bloom dates, ignoring the
 
 ```{r}
 # Fit simple least-squares lines for all sites.
-ls_fit_for_van <- lm(bloom_doy ~ year, data = cherry, subset = year >= 1880)
+# We use larger weights for observations from vancouver than for the other sites
+ls_fit_for_van <- lm(bloom_doy ~ year, data = cherry, subset = year >= 1880,
+                     weights = (location == 'vancouver') +
+                       0.2 * (location != 'vancouver'))
 
-predictions_vancouver <- tibble(location = 'vancouver',
-       year = 2023:2032) %>% 
-  bind_cols(predicted_doy = round(predict(ls_fit_for_van, newdata = .)))
+predictions_vancouver <- tibble(location = 'vancouver', year = 2022:2024) %>% 
+  bind_cols(predict(ls_fit_for_van, newdata = ., interval = 'prediction', level = 0.9)) %>% 
+  rename(prediction = fit, lower = lwr, upper = upr)
 ```
 
-Not surprisingly, the predicted peak bloom dates for Vancouver are thus very similar to the other 3 sites:
+Not surprisingly, the predicted peak bloom date for Vancouver is now very similar to the other 3 sites:
 ```{r}
 predictions_vancouver
 ```
 
 We can check the predictions against the data from previous competition years.
 ```{r}
-tibble(location = 'vancouver',
-       year = 2022) %>% 
-  bind_cols(predicted_doy = round(predict(ls_fit_for_van, newdata = .))) %>%
-  left_join(read.csv("data/vancouver.csv")) %>%
-  select(location, year, bloom_doy, predicted_doy)
+#| fig-width: 8
+#| fig-height: 3
+#| out-width: 100%
+#| fig-cap: |
+#|   Predictions and 90% prediction intervals from a simple linear regression model for
+#|   Vancouver using data from all four sites.
+# Plot the predictions alongside the actual observations for 2015 up to 2023.
+cherry %>% 
+  right_join(predictions_vancouver, by = c('year', 'location')) %>%
+  ggplot(aes(x = year, y = prediction, ymin = lower, ymax = upper)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(color = 'black', linetype = '22', linewidth = 0.8, fill = NA) +
+  geom_point(aes(y = bloom_doy)) +
+  scale_x_continuous(breaks = 2022:2024) +
+  facet_grid(cols = vars(str_to_title(location))) +
+  labs(x = "Year", y = "Peak bloom (days since Jan 1st)")
 ```
 
-If satisfied with the predictions, we can append them to the predictions for the other sites:
+If satisfied with the predictions, we can use them instead of the predictions from before.
 ```{r}
-predictions <- bind_rows(predictions, predictions_vancouver)
+predictions <- predictions %>% 
+  filter(location != 'vancouver') %>% 
+  bind_rows(predictions_vancouver)
 ```
 
 ## Preparing the submission file
@@ -179,18 +215,21 @@ Once we have the predictions for all four sites, we have to save them in the cor
 
 ```{r}
 submission_predictions <- predictions %>% 
-  filter(year > 2022) %>% 
-  mutate(predicted_doy = round(predicted_doy)) %>% 
-  pivot_wider(names_from = 'location', values_from = 'predicted_doy') %>% 
-  select(year, kyoto, liestal, washingtondc, vancouver)
+  filter(year == 2024) %>% 
+  mutate(prediction = round(prediction),
+         lower = floor(lower),
+         upper = ceiling(upper)) %>% 
+  select(-year)
 
 submission_predictions
 ```
 
 For submission, these predictions must be saved as a CSV file.
-**Important:** the CSV file must not have row names, which R adds by default. Specify `row.names=FALSE` to suppress them:
+**Important:** the CSV file must not have row names, which R adds by default.
+Specify `row.names=FALSE` to suppress them:
 
-```{r, eval=FALSE}
+```{r}
+#| eval: false
 write.csv(submission_predictions, file = "cherry-predictions.csv",
           row.names = FALSE)
 ```
@@ -199,7 +238,8 @@ write.csv(submission_predictions, file = "cherry-predictions.csv",
 
 We encourage you to find additional publicly-available data that will improve your predictions. For example, one source of global meteorological data comes from the Global Historical Climatology Network (GHCN), available in the `rnoaa` package. The package can also be installed via 
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 install.packages("rnoaa")
 ```
 
@@ -211,7 +251,8 @@ library(rnoaa)
 
 The list of stations can be retrieved using the `ghcnd_stations()` function. Note that the closest weather station to each city with continuously collected maximum temperatures are USC00186350 (Washington D.C.), GME00127786 (Liestal), JA000047759 (Kyoto), and CA001108395 (Vancouver).
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 stations <- ghcnd_stations()
 ```
 
@@ -255,7 +296,7 @@ historic_temperatures %>%
   ggplot() + 
   aes(year, tmax_avg) + 
   geom_line() +
-  xlim(1950, 2032) +
+  xlim(1950, 2024) +
   labs(x = "Year", y = "Average maximum temperature (1/10 °C)") +
   facet_grid(factor(season) ~ str_to_title(location))
 ```
@@ -270,7 +311,7 @@ ls_fit_temperature <- lm(tmax_avg ~ year * season + location,
 temperature_predictions <-
   expand_grid(location = c("washingtondc", "liestal", "kyoto", "vancouver" ),
               season = c("Winter", "Spring", "Summer", "Fall"),
-              year = 1950:2032) %>%
+              year = 1950:2024) %>%
   bind_cols(predicted_temperature = 
               predict(ls_fit_temperature, newdata = .)) %>%
   filter(season %in% c("Winter", "Spring")) %>%
@@ -293,14 +334,14 @@ The following plot shows a comparison of predictions for Vancouver using the two
 predictions_vancouver %>%
   left_join(predictions_temperature,
             by = c("location", "year")) %>%
-  pivot_longer(cols = c("predicted_doy", "predicted_doy_temperature")) %>%
-  mutate(name = ifelse(name == "predicted_doy", 
+  pivot_longer(cols = c("prediction", "predicted_doy_temperature")) %>%
+  mutate(name = ifelse(name == "prediction", 
                        "Method 1: location-based model", 
                        "Method 2: temperature-based model")) %>%
   ggplot() +
   aes(x = year, y = value, linetype = name) +
   geom_line() +
-  scale_x_continuous(breaks = seq(2023, 2032, by = 3)) +
+  scale_x_continuous(breaks = 2022:2024) +
   labs(x = "Year", linetype = "",
        y = "Predicted peak bloom (days since Jan 1st) for Vancouver") +
   theme(legend.position = "bottom")

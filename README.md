@@ -2,9 +2,9 @@
 
 This is the official template repository for George Mason’s Department of Statistics cherry blossom peak bloom prediction competition.
 
-This repository contains cleaned and ready-to-use data on peak bloom dates in the *data/* folder, alongside a demo prediction analysis report (*demo_analysis.Rmd*).
-The demo analysis demonstrates how to load the provided data sets, plot the observed time series, and uses a very simple linear regression model to predict the peak bloom dates for the next 10 years.
-The demo analysis requires a [working installation of R](https://cran.r-project.org) (version ≥ 4.1 strongly suggested) as well as the `rmarkdown` package and the `tidyverse` suite of packages.
+This repository contains cleaned and ready-to-use data on peak bloom dates in the *data/* folder, alongside a demo prediction analysis report (*demo_analysis.qmd*).
+The demo analysis demonstrates how to load the provided data sets, plot the observed time series, and uses a very simple linear regression model to predict the peak bloom dates for the next year as well as estimate prediction intervals.
+The demo analysis requires a [working installation of R](https://cran.r-project.org) and (version ≥ 4.3 strongly suggested), an [installation of quarto](https://www.quarto.org) (e.g., as part of the RStudio IDE), as well as the `tidyverse` suite of packages.
 
 The rendered demo analysis is available at https://competition.statistics.gmu.edu/demo_analysis.html.
 
@@ -42,7 +42,7 @@ To fork this repository, locate the _Fork_ button at the top right of the page:
 This will copy the repository to your GitHub account under the name _peak-bloom-prediction_.
 
 Next you need to clone the repository to your local computer.
-Navigate to **your fork** of the repository on github.com. 
+Navigate to **your fork** of the repository on github.com.
 The steps are the same as outlined below for cloning the repository, **but the location of the respository will be different**.
 
 More detailed instructions on how to fork a repository can be found under https://docs.github.com/en/get-started/quickstart/fork-a-repo.
@@ -91,7 +91,7 @@ To enter the competition, you must make your repository publicly accessible!
 
 To enter the competition you must submit your predictions and the URL pointing to your repository via https://competition.statistics.gmu.edu.
 
-**Entries must be submitted by the end of February 28, 2023 (anywhere on earth)**.
+**Entries must be submitted by the end of February 28, 2024 (anywhere on earth)**.
 If it's February anywhere on earth, your submission will be considered.
 
 The predictions are judged based on the sum of the absolute differences between your predicted peak bloom dates and the publicly posted peak bloom dates:
@@ -103,7 +103,13 @@ The predictions are judged based on the sum of the absolute differences between 
   | predicted_bloom_date_vancouver_2023 - actual_bloom_date_vancouver_2023 |
 ```
 
-The true bloom dates for 2023 are taken to be the dates reported by the following agencies/institutions:
+The prediction intervals are evaluated based on their squared length and if they cover the actual peak bloom dates:
+
+```
+
+```
+
+The true bloom dates for 2024 are taken to be the dates reported by the following agencies/institutions:
 
 - **Kyoto (Japan):** a local news paper from Arashiyama as published at http://atmenv.envi.osakafu-u.ac.jp/aono/kyophenotemp4,
 - **Washington, D.C. (USA):** National Park Service,
