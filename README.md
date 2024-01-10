@@ -97,15 +97,15 @@ If it's February anywhere on earth, your submission will be considered.
 The predictions are judged based on the sum of the absolute differences between your predicted peak bloom dates and the publicly posted peak bloom dates:
 
 ```
-| predicted_bloom_date_kyoto_2023 - actual_bloom_date_kyoto_2023 | +
-  | predicted_bloom_date_washingtondc_2023 - actual_bloom_date_washingtondc_2023 | +
-  | predicted_bloom_date_liestal_2023 - actual_bloom_date_liestal_2023 | +
-  | predicted_bloom_date_vancouver_2023 - actual_bloom_date_vancouver_2023 |
+| predicted_bloom_date_kyoto_2024 - actual_bloom_date_kyoto_2024 | +
+  | predicted_bloom_date_washingtondc_2024 - actual_bloom_date_washingtondc_2024 | +
+  | predicted_bloom_date_liestal_2024 - actual_bloom_date_liestal_2024 | +
+  | predicted_bloom_date_vancouver_2024 - actual_bloom_date_vancouver_2024 | +
+  | predicted_bloom_date_newyorkcity_2024 - actual_bloom_date_newyorkcity_2024 |
 ```
 
-The prediction intervals are evaluated based on their squared length and if they cover the actual peak bloom dates:
-
-![Formula for determining the winner for the most accurate prediction intervals.](figures/readme/prediction_interval.png)
+The prediction intervals are evaluated based on how many out of the five intervals cover the actual bloom date.
+In the case of ties, the sum of the squared lengths of the intervals is used to break the ties.
 
 The true bloom dates for 2024 are taken to be the dates reported by the following agencies/institutions:
 
@@ -113,6 +113,7 @@ The true bloom dates for 2024 are taken to be the dates reported by the followin
 - **Washington, D.C. (USA):** National Park Service,
 - **Liestal-Weideli (Switzerland):** MeteoSwiss,
 - **Vancouver, BC (Canada):** Vancouver Cherry Blossom Festival in collaboration with Douglas Justice, Associate Director, Curator of Collections, UBC Botanical Garden.
+- **New York City, NY (USA):** The Washington Square Park Eco Projects in collaboration with the Nature Lab.
 
 The full competition rules are available under https://competition.statistics.gmu.edu.
 
