@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE,
 
 ## Instructions
 
-In this analysis we demonstrate a simple way of predicting the peak bloom date over the next decade for all four locations required by the competition.
+In this analysis we demonstrate a simple way of predicting the peak bloom date over the next decade for all five locations required by the competition.
 The models are simple in that they only use the past bloom dates observed at each location---no other covariates or additional information are considered.
 At the end of this document ([Appendix A](#appendix-rnoaa)), we demonstrate a simple way to get historic temperature data for the four locations via the `rnoaa` package.
 
@@ -40,7 +40,7 @@ library(tidyverse)
 
 ## Loading the data
 
-The data for each of the three main sites is provided as a simple text file in CSV format.
+The data for four sites is provided as a simple text file in CSV format.
 Each file contains the dates of the peak bloom of the cherry trees at the respective site, alongside the geographical location of the site.
 
 The six columns in each data file are
@@ -78,7 +78,7 @@ cherry %>%
 #| fig-height: 3
 #| out-width: 100%
 #| fig-cap: |
-#|   Time series of peak bloom of cherry trees since 1880 at the four different sites.
+#|   Time series of peak bloom of cherry trees since 1880 at four different sites.
 cherry %>% 
   filter(year >= 1880) %>%
   ggplot(aes(x = year, y = bloom_doy)) +
@@ -108,7 +108,7 @@ We can compute the actual predictions using the `predict()` function and
 #| fig-height: 3
 #| out-width: 100%
 #| fig-cap: |
-#|   Predictions and 90% prediction intervals from simple linear regression models fitted to all
+#|   Predictions and 90% prediction intervals from simple linear regression models fitted to
 #|   four sites.
 # Compute the predictions for all 3 sites
 predictions <- expand_grid(location = unique(cherry$location),
@@ -208,6 +208,87 @@ predictions <- predictions %>%
   filter(location != 'vancouver') %>% 
   bind_rows(predictions_vancouver)
 ```
+
+## Extrapolating to New York City, NY using USA-NPN data
+
+Similar to Vancouver, BC, only few historical observations are available for our location in New York City, NY.
+There are some historical observations dating back to 2019 in the data provided by USA-NPN.
+The Washington Square Park has site id 32789 and the Yoshino cherry you should predict has species id 228.
+
+```{r}
+#| label: load-historical-data-nyc
+nyc_data_npn <- read_csv("data/USA-NPN_status_intensity_observations_data.csv") %>% 
+  filter(Site_ID == 32789,
+         Species_ID == 228) %>% 
+  mutate(Observation_Date = as_date(Observation_Date, format = '%m/%d/%y'))
+```
+
+This data, however, needs to be transformed as it only contains individual observations of the phenophase and not the actual peak bloom date.
+For simplicity, we take the first day someone observed the flowers to be open as the peak bloom day.
+This could be done in a more sophisticated way by also looking at the reported intensity value.
+
+```{r}
+#| warning: true
+nyc_data <- nyc_data_npn %>% 
+  arrange(Observation_Date) %>% 
+  mutate(year = year(Observation_Date)) %>% 
+  group_by(year) %>% 
+  summarize(first_flower_index = min(which(Phenophase_Status == 1)),
+            bloom_date = strftime(Observation_Date[first_flower_index], format = '%Y-%m-%d'),
+            bloom_doy = Day_of_Year[first_flower_index],
+            .groups = 'drop') %>% 
+  filter(!is.na(bloom_doy)) %>% 
+  select(-first_flower_index) %>% 
+  mutate(location = 'newyorkcity')
+
+cherry_with_nyc <- cherry %>% 
+  bind_rows(nyc_data)
+```
+
+For 2020, no bloom was reported, hence the warning.
+
+Using the same steps as for Vancouver, BC, a simple linear model can be fitted.
+```{r}
+# Fit simple least-squares lines for all sites.
+# We use larger weights for observations from NYC than for the other sites
+ls_fit_for_nyc <- lm(bloom_doy ~ year, data = cherry_with_nyc, subset = year >= 1880,
+                     weights = (location == 'newyorkcity') +
+                       0.2 * (location != 'newyorkcity'))
+
+predictions_nyc <- tibble(location = 'newyorkcity', year = 2019:2024) %>% 
+  bind_cols(predict(ls_fit_for_nyc, newdata = ., interval = 'prediction', level = 0.9)) %>% 
+  rename(prediction = fit, lower = lwr, upper = upr)
+
+predictions_nyc
+```
+
+We can check the predictions against the data from previous competition years.
+```{r}
+#| fig-width: 8
+#| fig-height: 3
+#| out-width: 100%
+#| fig-cap: |
+#|   Predictions and 90% prediction intervals from a simple linear regression model for
+#|   Washington Square Park in NYC using data from all five sites.
+# Plot the predictions alongside the actual observations for 2015 up to 2023.
+cherry_with_nyc %>% 
+  right_join(predictions_nyc, by = c('year', 'location')) %>%
+  ggplot(aes(x = year, y = prediction, ymin = lower, ymax = upper)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(color = 'black', linetype = '22', linewidth = 0.8, fill = NA) +
+  geom_point(aes(y = bloom_doy)) +
+  scale_x_continuous(breaks = 2019:2024) +
+  facet_grid(cols = vars(str_to_title(location))) +
+  labs(x = "Year", y = "Peak bloom (days since Jan 1st)")
+```
+
+If satisfied with the predictions, we can use them instead of the predictions from before.
+```{r}
+predictions <- predictions %>% 
+  filter(location != 'newyorkcity') %>% 
+  bind_rows(predictions_nyc)
+```
+
 
 ## Preparing the submission file
 

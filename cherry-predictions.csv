@@ -1,6 +1,6 @@
 "location","prediction","lower","upper"
-"kyoto",22,22,22
-"liestal",30,28,34
-"washingtondc",25,20,30
-"vancouver",32,20,40
-"newyorkcity",35,20,50
+"washingtondc",90,76,103
+"liestal",94,80,107
+"kyoto",94,81,107
+"vancouver",92,85,98
+"newyorkcity",92,85,98
