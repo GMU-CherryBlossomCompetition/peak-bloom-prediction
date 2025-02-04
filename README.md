@@ -109,7 +109,7 @@ In the case of ties, the sum of the squared lengths of the intervals is used to 
 
 The true bloom dates for 2025 are taken to be the dates reported by the following agencies/institutions:
 
-- **Kyoto (Japan):** a local news paper from Arashiyama as published at http://atmenv.envi.osakafu-u.ac.jp/aono/kyophenotemp4,
+- **Kyoto (Japan):** a local news paper from Arashiyama http://atmenv.envi.osakafu-u.ac.jp/aono/kyophenotemp4,
 - **Washington, D.C. (USA):** National Park Service,
 - **Liestal-Weideli (Switzerland):** MeteoSwiss,
 - **Vancouver, BC (Canada):** Vancouver Cherry Blossom Festival in collaboration with Douglas Justice, Associate Director, Curator of Collections, UBC Botanical Garden.
