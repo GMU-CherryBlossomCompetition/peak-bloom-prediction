@@ -31,8 +31,11 @@ data <- data %>%
   mutate(temp_avg = runif(n(), min = 5, max = 20),
          temp_variance = runif(n(), min = 0, max = 5))
 
-# Train Gradient Boosted Model
+# Split data into training (80%) and testing (20%)
 set.seed(42)
+train_index <- createDataPartition(data$bloom_doy, p = 0.8, list = FALSE)
+train_data <- data[train_index, ]
+test_data <- data[-train_index, ]
 
 # One-hot encoding categorical variables properly
 train_data_numeric <- model.matrix(~ . - 1, data = train_data %>% select(-bloom_doy, -location))
